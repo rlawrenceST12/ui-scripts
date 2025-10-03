@@ -1,0 +1,52 @@
+#!/bin/bash
+ROOT="$(dirname "$(realpath "$0")")/.."
+
+# default to migrate
+COMMAND=migrate
+if [[ $1 != "" ]]; then
+  COMMAND="$@"
+  if [[ $COMMAND = "clean" ]]; then
+    echo "Are you sure? This will remove all data! (yes/no)"
+    read a
+    if [[ "$a" != "yes" ]]; then
+      echo "Aborting..."
+      exit 1
+    else
+      echo "Cleaning database!"
+      echo ""
+    fi
+  fi
+fi
+
+DB_PORT=${DB_PORT:-5432}
+DB_SCHEMA=${DB_SCHEMA:-postgres}
+DB_USER=${DB_USER:-postgres}
+DB_PASSWORD=${DB_PASSWORD:-postgres}
+DB_NAME=${DB_NAME:-postgres}
+DB_HOST=${DB_HOST:-localhost}
+
+# Run the flyway scripts
+echo "Running flyway $COMMAND"
+podman run \
+  --rm \
+  -v $PWD/db:/flyway/sql:ro \
+  -e FLYWAY_USER=${DB_USER} \
+  -e FLYWAY_PASSWORD=${DB_PASSWORD} \
+  -e FLYWAY_URL=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME} \
+  -e FLYWAY_SCHEMAS=${DB_SCHEMA} \
+  -e FLYWAY_DEFAULT_SCHEMA=${DB_SCHEMA} \
+  --network host \
+  docker.io/flyway/flyway:latest \
+  $COMMAND -locations=filesystem:/flyway/sql -cleanDisabled=false -validateOnMigrate=false -baselineOnMigrate=true -connectRetries=60
+
+if [[ $COMMAND = "clean" ]]; then
+  echo ""
+  echo ""
+  echo ""
+  echo "===================="
+  echo "NOTE: you will need to run '$0' again to migrate to current schema"
+  echo "===================="
+  echo ""
+  echo ""
+  echo ""
+fi

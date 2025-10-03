@@ -1,0 +1,58 @@
+#!/bin/bash
+# To be run from nest. Sets up a db for test data, runs migrations on it, then starts nest and loads data into the database
+#
+
+# check if in nest project
+# check for remote of next-evolution-spacecraft-tctm
+if ! git remote -v | grep -q next-evolution-spacecraft-tctm; then
+  echo "This script requires the next-evolution-spacecraft-tctm remote to be set up."
+  echo "Please run 'git remote add next-evolution-spacecraft-tctm' if you are in the nest project"
+  echo "or change to the nest project directory."
+  exit 1
+fi
+
+DESTROYED=0
+
+uv sync
+if podman ps --format '{{.Names}}' | grep -q nest-postgrestest; then
+  echo "Do you want to clear the database and load new demo data? (y/n)"
+  read -r answer
+  if [ "$answer" != "${answer#[Yy]}" ]; then
+    # remove any old test db
+    echo "removing old DB..."
+    podman stop nest-postgrestest
+    sudo rm -fr tmp/nest-postgrestest
+    echo "starting DB..."
+    testpostgres
+    DESTROYED=1
+  fi
+else
+  echo "starting DB..."
+  testpostgres
+  DESTROYED=1
+fi
+
+if podman ps --format '{{.Names}}' | grep -q nest-keycloak; then
+  echo "Found keycloak, not starting"
+else
+  echo "Keycloak not found, starting"
+  uv run bin/keycloak.sh
+fi
+
+terminator -e 'bash -c "DB_PORT=9999 FLASK_HOST=0.0.0.0 FLASK_PORT=5001 uv run wsgi.py"'
+
+echo "Waiting for nest to come up..."
+while ! curl -s http://localhost:5001/ | grep -q '<body>'; do
+  sleep 1
+done
+echo "Nest is up!"
+sleep 4
+
+if [[ $DESTROYED == 1 ]]; then
+  echo "Loading Hummingsat"
+  uv run load_demo_data.py --nest-url http://localhost:5001
+#  echo "Loading Intelsat"
+#  uv run load_demo_data.py --nest-url http://localhost:5001 -c Intelsat -p IS45 -s IS45
+#  echo "Loading Inmar"
+#  uv run load_demo_data.py --nest-url http://localhost:5001 -c Inmar -p I8 -s I8F1
+fi

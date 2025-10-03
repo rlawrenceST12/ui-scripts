@@ -1,0 +1,48 @@
+#!/bin/bash
+ROOT="$(dirname "$(realpath "$0")")/.."
+export DB_HOST=localhost
+export DB_PORT=9999
+export DB_NAME=postgres
+export DB_USER=postgres
+export DB_PASSWORD=postgres
+export DB_SCHEMA=postgres
+export CONTAINER_NAME=nest-postgrestest
+
+# Check if PostgreSQL is already running
+if podman ps --format '{{.Names}}' | grep -q "${CONTAINER_NAME}"; then
+  echo "PostgreSQL is already running. use 'podman stop ${CONTAINER_NAME}' to stop it."
+  exit 0
+fi
+
+if [ -r $PWD/tmp/${CONTAINER_NAME} ]; then
+  echo "Do you want to remove the existing PostgreSQL data? (y/n)"
+  read -r answer
+  if [ "$answer" != "${answer#[Yy]}" ]; then
+    echo "Removing existing PostgreSQL data..."
+    sudo rm -rf $PWD/tmp/${CONTAINER_NAME}
+  else
+    echo "Keeping existing PostgreSQL data."
+  fi
+fi
+mkdir -p $PWD/tmp/${CONTAINER_NAME}
+chmod 777 $PWD/tmp/${CONTAINER_NAME}
+podman run \
+  -d \
+  --rm \
+  --name ${CONTAINER_NAME} \
+  --volume $PWD/tmp/${CONTAINER_NAME}:/bitnami/postgresql:z \
+  -e POSTGRESQL_USERNAME=${DB_USER} \
+  -e POSTGRESQL_PASSWORD=${DB_PASSWORD} \
+  -e POSTGRESQL_DATABASE=${DB_NAME} \
+  -p ${DB_PORT}:5432 \
+  docker.io/bitnami/postgresql:latest
+
+# Wait for PostgreSQL to be fully up
+echo "Waiting for PostgreSQL to be fully up..."
+until podman exec ${CONTAINER_NAME} pg_isready -U postgres >/dev/null 2>&1; do
+  sleep 1
+done
+echo "Postgres is ready!"
+sleep 5
+
+exec doflyway migrate
