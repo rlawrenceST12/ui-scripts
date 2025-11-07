@@ -99,8 +99,69 @@ def run():
                 },
                 {'curveName': 'TEST_NUMERIC', 'radix': 'O', 'engType': 'I', 'rawType': 'I', 'numCurve': {'xvals': [1, 2], 'yvals': [3, 4]}},
                 {'curveName': 'TEST_LOG', 'radix': 'D', 'logCurve': {'coeff0': '5', 'coeff1': '4', 'coeff2': '3', 'coeff3': '2', 'coeff4': '1'}},
+                {'curveName': 'TEST_TEXT', 'textCurve': [
+                    {'low': 0,'high': 3,'textValue': 'LOW'},
+                    {'low': 4, 'high': 9, 'textValue': 'MID'},
+                    {'low': 10, 'high': 1000000, 'textValue': 'HIGH'}
+                ]},
             ],
         },
+    )
+    result = request(
+        'POST',
+        '/monitors',
+        {
+            "monitors":[
+                {"monitorName":"TEST_HS_01","description":"PMON_1","program":"HummingSat","isEnabled":True,
+                 "interpretation":"U","numFails":1,"validityParameters":[],
+                 "parameter":{"parameterName":"AO_30.AJ_ANGLE_BIAS_REMOVAL_RATE",
+                              "absoluteName":"","apid":30,"monitoringInterval":0,
+                              "maxReportingDelay":0,"isPMON":True,
+                              "isParameterGroundMon":False,
+                              "checks":[
+                              {"limit":{"flightModel":"HS01","type":"int","limitCheckType":None,
+                                        "yellowHigh":None,"yellowLow":None,"redHigh":None,"redLow":1,
+                                        "lowEventName":"AO_30.ATM_AO_APPLICATION_INACTIVE",
+                                        "lowCustomEventId":None,"highCustomEventId":None}}
+                              ]}},
+                {"monitorName":"TEST_HS_02","description":"PMON_1","program":"HummingSat","isEnabled":True,
+                 "interpretation":"U","numFails":1,"validityParameters":[],
+                 "parameter":{"parameterName":"AO_30.AJ_ANGLE_BIAS_REMOVAL_RATE",
+                              "absoluteName":"","apid":30,"monitoringInterval":0,
+                              "maxReportingDelay":0,"isPMON":True,
+                              "isParameterGroundMon":False,
+                              "checks":[
+                              {"limit":{"flightModel":"HS01","type":"int","limitCheckType":None,
+                                        "yellowHigh":None,"yellowLow":None,"redHigh":None,"redLow":1,
+                                        "lowEventName":"AO_30.ATM_AO_APPLICATION_INACTIVE",
+                                        "lowCustomEventId":None,"highCustomEventId":None}}
+                              ]}},
+                {"monitorName":"TEST_HS_03","description":"PMON_1","program":"HummingSat","isEnabled":True,
+                 "interpretation":"U","numFails":1,"validityParameters":[],
+                 "parameter":{"parameterName":"AO_30.AJ_ANGLE_BIAS_REMOVAL_RATE",
+                              "absoluteName":"","apid":30,"monitoringInterval":0,
+                              "maxReportingDelay":0,"isPMON":True,
+                              "isParameterGroundMon":False,
+                              "checks":[
+                              {"limit":{"flightModel":"HS01","type":"int","limitCheckType":None,
+                                        "yellowHigh":None,"yellowLow":None,"redHigh":None,"redLow":1,
+                                        "lowEventName":"AO_30.ATM_AO_APPLICATION_INACTIVE",
+                                        "lowCustomEventId":None,"highCustomEventId":None}}
+                              ]}},
+                {"monitorName":"TEST_HS_04","description":"PMON_1","program":"HummingSat","isEnabled":True,
+                 "interpretation":"U","numFails":1,"validityParameters":[],
+                 "parameter":{"parameterName":"AO_30.AJ_ANGLE_BIAS_REMOVAL_RATE",
+                              "absoluteName":"","apid":30,"monitoringInterval":0,
+                              "maxReportingDelay":0,"isPMON":True,
+                              "isParameterGroundMon":False,
+                              "checks":[
+                              {"limit":{"flightModel":"HS01","type":"int","limitCheckType":None,
+                                        "yellowHigh":None,"yellowLow":None,"redHigh":None,"redLow":1,
+                                        "lowEventName":"AO_30.ATM_AO_APPLICATION_INACTIVE",
+                                        "lowCustomEventId":None,"highCustomEventId":None}}
+                              ]}}
+            ],
+            "reasonForChange":"test"}
     )
     result = request(
         'POST',
@@ -144,7 +205,7 @@ argparser = argparse.ArgumentParser()
 argparser.add_argument('-c', '--customer', type=str, help='Customer Name for program', default='SWISSto12')
 argparser.add_argument('-p', '--program', type=str, help='Program Name', default='HummingSat')
 argparser.add_argument('-s', '--spacecraft', type=str, help='Spacecraft Name', default='HS01')
-argparser.add_argument('-f', '--file', type=str, help='TAS zip file name', default='./tests/tas/xml/IDS_XML_20250109.zip')
+argparser.add_argument('-f', '--file', type=str, help='TAS zip file name', default='./tests/tas/xml/IDS_XML_20250919.zip')
 argparser.add_argument('--nest-url', type=str, help='Full base URL for the NEST service, e.g. http://nest.local', default=None)
 argparser.add_argument(
     '--oidc-endpoint', type=str, help='OIDC endpoint for Keycloak, e.g. http://keycloak.local/realms/local-development', default=None

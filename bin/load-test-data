@@ -3,11 +3,11 @@
 #
 
 # check if in nest project
+# TODO: maybe just check the pyproject?
 # check for remote of next-evolution-spacecraft-tctm
 if ! git remote -v | grep -q next-evolution-spacecraft-tctm; then
-  echo "This script requires the next-evolution-spacecraft-tctm remote to be set up."
-  echo "Please run 'git remote add next-evolution-spacecraft-tctm' if you are in the nest project"
-  echo "or change to the nest project directory."
+  echo "This script requires a git remote pointed to next-evolution-spacecraft-tctm."
+  echo "Change to the nest project directory."
   exit 1
 fi
 
@@ -39,7 +39,22 @@ else
   uv run bin/keycloak.sh
 fi
 
-terminator -e 'bash -c "DB_PORT=9999 FLASK_HOST=0.0.0.0 FLASK_PORT=5001 uv run wsgi.py"'
+NEST_CMD="DB_PORT=9999 FLASK_HOST=0.0.0.0 FLASK_PORT=5001 uv run wsgi.py"
+
+# if terminator is installed use it, else use default terminal
+if command -v terminator >/dev/null 2>&1; then
+  TERMINAL_COMMAND='terminator -x'
+elif command -v gnome-terminal >/dev/null 2>&1; then
+  TERMINAL_COMMAND='gnome-terminal --'
+else
+  echo "No supported terminal emulator found (terminator, gnome-terminal)."
+  echo "Please start nest manually in another terminal with $NEST_CMD"
+  exit 1
+fi
+
+set -x
+$TERMINAL_COMMAND "bash -c \"$NEST_CMD\""
+set +x
 
 echo "Waiting for nest to come up..."
 while ! curl -s http://localhost:5001/ | grep -q '<body>'; do
@@ -49,10 +64,12 @@ echo "Nest is up!"
 sleep 4
 
 if [[ $DESTROYED == 1 ]]; then
+  set -x
   echo "Loading Hummingsat"
   uv run load_demo_data.py --nest-url http://localhost:5001
-#  echo "Loading Intelsat"
-#  uv run load_demo_data.py --nest-url http://localhost:5001 -c Intelsat -p IS45 -s IS45
-#  echo "Loading Inmar"
-#  uv run load_demo_data.py --nest-url http://localhost:5001 -c Inmar -p I8 -s I8F1
+  echo "Loading Intelsat"
+  uv run load_demo_data.py --nest-url http://localhost:5001 -c Intelsat -p IS45 -s IS45
+  echo "Loading Inmar"
+  uv run load_demo_data.py --nest-url http://localhost:5001 -c Inmar -p I8 -s I8F1
+  set +x
 fi
